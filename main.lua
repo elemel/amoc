@@ -39,7 +39,9 @@ function isBlock(mask, dx, dy)
 end
 
 function love.load()
-	imageSize = 32
+	mapSize = 16
+	atlasSize = 16
+	imageSize = mapSize * atlasSize
 
 	sampleCounts = love.image.newImageData(imageSize, imageSize, "r32f")
 	meanLightings = love.image.newImageData(imageSize, imageSize, "r32f")
@@ -53,14 +55,22 @@ end
 
 function love.update(dt)
 	for i = 1, 256 do
-		local pixelX = love.math.random(0, imageSize - 1)
-		local pixelY = love.math.random(0, imageSize - 1)
+		local mapX = love.math.random(0, atlasSize - 1)
+		local mapY = love.math.random(0, atlasSize - 1)
 
-		local ax = (pixelX + 0.5) / imageSize
-		local ay = (pixelY + 0.5) / imageSize
+		local mask = 16 * mapY + mapX
 
-		local sampleCount = sampleCounts:getPixel(pixelX, pixelY)
-		local meanLighting = meanLightings:getPixel(pixelX, pixelY)
+		local pixelX = love.math.random(0, mapSize - 1)
+		local pixelY = love.math.random(0, mapSize - 1)
+
+		local globalPixelX = mapX * mapSize + pixelX
+		local globalPixelY = mapY * mapSize + pixelY
+
+		local ax = (pixelX + 0.5) / mapSize
+		local ay = (pixelY + 0.5) / mapSize
+
+		local sampleCount = sampleCounts:getPixel(globalPixelX, globalPixelY)
+		local meanLighting = meanLightings:getPixel(globalPixelX, globalPixelY)
 
 		for j = 1, 256 do
 			local dx, dy = randomPointOnSphere()
@@ -95,11 +105,11 @@ function love.update(dt)
 			sampleCount = sampleCount + 1
 		end
 
-		sampleCounts:setPixel(pixelX, pixelY, sampleCount, 0, 0, 0)
-		meanLightings:setPixel(pixelX, pixelY, meanLighting, 0, 0, 0)
+		sampleCounts:setPixel(globalPixelX, globalPixelY, sampleCount, 0, 0, 0)
+		meanLightings:setPixel(globalPixelX, globalPixelY, meanLighting, 0, 0, 0)
 
-		local darkenedGray = math.pow(meanLighting, 3)
-		imageData:setPixel(pixelX, pixelY, darkenedGray, darkenedGray, darkenedGray, 1)
+		local darkenedGray = math.pow(meanLighting, 1)
+		imageData:setPixel(globalPixelX, globalPixelY, darkenedGray, darkenedGray, darkenedGray, 1)
 	end
 
 	image:replacePixels(imageData)
@@ -107,7 +117,7 @@ end
 
 function love.draw()
 	local graphicsWidth, graphicsHeight = love.graphics.getDimensions()
-	local scale = 0.5 * graphicsHeight / imageSize
+	local scale = graphicsHeight / imageSize
 	love.graphics.draw(
 		image,
 		0.5 * graphicsWidth,
