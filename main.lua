@@ -44,8 +44,8 @@ function love.load()
 	atlasSize = 16
 	imageSize = mapSize * atlasSize
 
-	sampleCounts = love.image.newImageData(imageSize, imageSize, "r32f")
-	meanLightings = love.image.newImageData(imageSize, imageSize, "r32f")
+	-- meanLightings, sampleCounts
+	sampleData = love.image.newImageData(imageSize, imageSize, "rg32f")
 
 	imageData = love.image.newImageData(imageSize, imageSize, "rgba32f")
 	image = love.graphics.newImage(imageData)
@@ -70,8 +70,7 @@ function love.update(dt)
 		local ax = (pixelX + 0.5) / mapSize
 		local ay = (pixelY + 0.5) / mapSize
 
-		local sampleCount = sampleCounts:getPixel(globalPixelX, globalPixelY)
-		local meanLighting = meanLightings:getPixel(globalPixelX, globalPixelY)
+		local meanLighting, sampleCount = sampleData:getPixel(globalPixelX, globalPixelY)
 
 		for j = 1, 16 do
 			local dx, dy = randomPointOnSphere()
@@ -106,11 +105,8 @@ function love.update(dt)
 			sampleCount = sampleCount + 1
 		end
 
-		sampleCounts:setPixel(globalPixelX, globalPixelY, sampleCount, 0, 0, 0)
-		meanLightings:setPixel(globalPixelX, globalPixelY, meanLighting, 0, 0, 0)
-
-		local darkenedGray = math.pow(meanLighting, 1)
-		imageData:setPixel(globalPixelX, globalPixelY, darkenedGray, darkenedGray, darkenedGray, 1)
+		sampleData:setPixel(globalPixelX, globalPixelY, meanLighting, sampleCount, 0, 0)
+		imageData:setPixel(globalPixelX, globalPixelY, meanLighting, meanLighting, meanLighting, 1)
 	end
 
 	image:replacePixels(imageData)
