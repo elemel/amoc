@@ -35,11 +35,12 @@ function isBlock(mask, dx, dy)
     n = n - 1
   end
 
+  assert(0 <= n and n <= 7)
   return bit.band(bit.rshift(mask, n), 1) ~= 0
 end
 
 function love.load()
-	mapSize = 16
+	mapSize = 32
 	atlasSize = 16
 	imageSize = mapSize * atlasSize
 
@@ -54,7 +55,7 @@ function love.load()
 end
 
 function love.update(dt)
-	for i = 1, 256 do
+	for i = 1, 4096 do
 		local mapX = love.math.random(0, atlasSize - 1)
 		local mapY = love.math.random(0, atlasSize - 1)
 
@@ -72,7 +73,7 @@ function love.update(dt)
 		local sampleCount = sampleCounts:getPixel(globalPixelX, globalPixelY)
 		local meanLighting = meanLightings:getPixel(globalPixelX, globalPixelY)
 
-		for j = 1, 256 do
+		for j = 1, 16 do
 			local dx, dy = randomPointOnSphere()
 			local radius = love.math.random()
 
