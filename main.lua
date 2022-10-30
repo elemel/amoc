@@ -126,5 +126,15 @@ function love.draw()
 		0.5 * imageSize
 	)
 
-	love.graphics.print(love.timer.getFPS())
+	-- love.graphics.print(love.timer.getFPS())
+end
+
+function love.keypressed(key, scancode, isrepeat)
+	if key == "return" then
+		local filename = "screenshot-" .. os.time() .. ".png"
+		print("Capturing screenshot: " .. love.filesystem.getSaveDirectory() .. "/" .. filename .. "")
+		love.graphics.captureScreenshot(filename)
+	elseif key == "escape" then
+		love.event.quit()
+	end
 end
