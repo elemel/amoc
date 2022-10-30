@@ -19,6 +19,21 @@ function randomPointOnSphere()
   return normalize(randomPointInSphere())
 end
 
+-- See: https://www.rorydriscoll.com/2009/01/07/better-sampling/
+function cosineSampleHemisphere()
+  local u1 = love.math.random()
+  local u2 = love.math.random()
+
+  local r = math.sqrt(u1)
+  local theta = 2 * math.pi * u2
+
+  local x = r * math.cos(theta)
+  local y = r * math.sin(theta)
+  local z = math.sqrt(math.max(0, 1 - u1))
+
+  return x, y, z
+end
+
 -- See: https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line#Line_defined_by_two_points
 function distanceFromPointToLine(x, y, ax, ay, bx, by)
   return math.abs((bx - ax) * (ay - y) - (ax - x) * (by - ay))
@@ -74,8 +89,9 @@ function love.update(dt)
     local sampleCount = sampleCounts[globalPixel] or 0
 
     for j = 1, 16 do
-      local dx, dy = randomPointOnSphere()
-      local radius = love.math.random()
+      -- local dx, dy = randomPointOnSphere()
+      local dx, dy = cosineSampleHemisphere()
+      local radius = 1 -- love.math.random()
 
       local bx = ax + radius * dx
       local by = ay + radius * dy
@@ -143,11 +159,11 @@ end
 
 function love.keypressed(key, scancode, isrepeat)
   if key == "escape" or key == "return" then
-	  local gammaImageData = love.image.newImageData(imageSize, imageSize)
+    local gammaImageData = love.image.newImageData(imageSize, imageSize)
 
-	  gammaImageData:mapPixel(function(x, y, r, g, b, a)
-	    return love.math.linearToGamma(imageData:getPixel(x, y))
-		end)
+    gammaImageData:mapPixel(function(x, y, r, g, b, a)
+      return love.math.linearToGamma(imageData:getPixel(x, y))
+    end)
 
     local filename = "screenshot-" .. os.time() .. ".png"
     gammaImageData:encode("png", filename)
