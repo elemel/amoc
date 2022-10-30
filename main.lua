@@ -69,8 +69,41 @@ function love.load()
   mask = 255
 end
 
+function sampleLighting(mask, ax, ay)
+  -- local dx, dy = randomPointOnSphere()
+  local dx, dy = cosineSampleHemisphere()
+  local radius = 1 -- love.math.random()
+
+  local bx = ax + radius * dx
+  local by = ay + radius * dy
+
+  local blockDx = math.floor(bx)
+  local blockDy = math.floor(by)
+
+  local lighting = 1
+
+  if blockDx ~= 0 or blockDy ~= 0 then
+    if isBlock(mask, blockDx, blockDy) then
+      lighting = 0
+    else
+      if blockDx ~= 0 and blockDy ~= 0 then
+        if
+          distanceFromPointToLine(blockDx, 0, ax, ay, bx, by)
+          < distanceFromPointToLine(0, blockDy, ax, ay, bx, by)
+        then
+          lighting = isBlock(mask, blockDx, 0) and 0 or 1
+        else
+          lighting = isBlock(mask, 0, blockDy) and 0 or 1
+        end
+      end
+    end
+  end
+
+  return lighting
+end
+
 function love.update(dt)
-  for i = 1, 4096 do
+  for i = 1, 8192 do
     local globalPixelX = globalPixel % imageSize
     local globalPixelY = math.floor(globalPixel / imageSize)
 
@@ -89,34 +122,7 @@ function love.update(dt)
     local sampleCount = sampleCounts[globalPixel] or 0
 
     for j = 1, 16 do
-      -- local dx, dy = randomPointOnSphere()
-      local dx, dy = cosineSampleHemisphere()
-      local radius = 1 -- love.math.random()
-
-      local bx = ax + radius * dx
-      local by = ay + radius * dy
-
-      local blockDx = math.floor(bx)
-      local blockDy = math.floor(by)
-
-      local lighting = 1
-
-      if blockDx ~= 0 or blockDy ~= 0 then
-        if isBlock(mask, blockDx, blockDy) then
-          lighting = 0
-        else
-          if blockDx ~= 0 and blockDy ~= 0 then
-            if
-              distanceFromPointToLine(blockDx, 0, ax, ay, bx, by)
-              < distanceFromPointToLine(0, blockDy, ax, ay, bx, by)
-            then
-              lighting = isBlock(mask, blockDx, 0) and 0 or 1
-            else
-              lighting = isBlock(mask, 0, blockDy) and 0 or 1
-            end
-          end
-        end
-      end
+      local lighting = sampleLighting(mask, ax, ay)
 
       meanLighting = (meanLighting * sampleCount + lighting) / (sampleCount + 1)
       sampleCount = sampleCount + 1
