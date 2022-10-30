@@ -44,10 +44,10 @@ function love.load()
   imageSize = mapSize * 16
   globalPixel = 0
 
-  -- meanLightings, sampleCounts
-  sampleData = love.image.newImageData(imageSize, imageSize, "rg32f")
+  meanLightings = {}
+  sampleCounts = {}
 
-  imageData = love.image.newImageData(imageSize, imageSize, "rgba32f")
+  imageData = love.image.newImageData(imageSize, imageSize, "rgba16f")
   image = love.graphics.newImage(imageData)
   image:setFilter("linear", "nearest")
 
@@ -70,8 +70,8 @@ function love.update(dt)
     local ax = (pixelX + 0.5) / mapSize
     local ay = (pixelY + 0.5) / mapSize
 
-    local meanLighting, sampleCount =
-      sampleData:getPixel(globalPixelX, globalPixelY)
+    local meanLighting = meanLightings[globalPixel] or 0
+    local sampleCount = sampleCounts[globalPixel] or 0
 
     for j = 1, 16 do
       local dx, dy = randomPointOnSphere()
@@ -106,14 +106,9 @@ function love.update(dt)
       sampleCount = sampleCount + 1
     end
 
-    sampleData:setPixel(
-      globalPixelX,
-      globalPixelY,
-      meanLighting,
-      sampleCount,
-      0,
-      0
-    )
+    meanLightings[globalPixel] = meanLighting
+    sampleCounts[globalPixel] = sampleCount
+
     imageData:setPixel(
       globalPixelX,
       globalPixelY,

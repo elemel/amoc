@@ -4,7 +4,7 @@ function love.conf(t)
   -- t.window.height = 512
   -- t.window.width = 512
 
-  t.window.fullscreen = true
+  -- t.window.fullscreen = true
   -- t.window.highdpi = true
   t.window.resizable = true
   t.window.title = "Mayo"
