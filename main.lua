@@ -43,44 +43,42 @@ function rayBoxDistance(x, y, invDx, invDy, minX, minY, maxX, maxY)
   return minT <= maxT and max(0, minT) or huge
 end
 
-function sampleDistance(mask, ax, ay)
-  local dx, dy = cosineSampleHemisphere()
-
+function distance(mask, x, y, dx, dy)
   local invDx = 1 / dx
   local invDy = 1 / dy
 
   local distance = huge
 
   if dx < 0 and dy < 0 and band(mask, 1) ~= 0 then
-    distance = min(distance, rayBoxDistance(ax, ay, invDx, invDy, -1, -1, 0, 0))
+    distance = min(distance, rayBoxDistance(x, y, invDx, invDy, -1, -1, 0, 0))
   end
 
   if dy < 0 and band(mask, 2) ~= 0 then
-    distance = min(distance, rayBoxDistance(ax, ay, invDx, invDy, 0, -1, 1, 0))
+    distance = min(distance, rayBoxDistance(x, y, invDx, invDy, 0, -1, 1, 0))
   end
 
   if dx > 0 and dy < 0 and band(mask, 4) ~= 0 then
-    distance = min(distance, rayBoxDistance(ax, ay, invDx, invDy, 1, -1, 2, 0))
+    distance = min(distance, rayBoxDistance(x, y, invDx, invDy, 1, -1, 2, 0))
   end
 
   if dx < 0 and band(mask, 8) ~= 0 then
-    distance = min(distance, rayBoxDistance(ax, ay, invDx, invDy, -1, 0, 0, 1))
+    distance = min(distance, rayBoxDistance(x, y, invDx, invDy, -1, 0, 0, 1))
   end
 
   if dx > 0 and band(mask, 16) ~= 0 then
-    distance = min(distance, rayBoxDistance(ax, ay, invDx, invDy, 1, 0, 2, 1))
+    distance = min(distance, rayBoxDistance(x, y, invDx, invDy, 1, 0, 2, 1))
   end
 
   if dx < 0 and dy > 0 and band(mask, 32) ~= 0 then
-    distance = min(distance, rayBoxDistance(ax, ay, invDx, invDy, -1, 1, 0, 2))
+    distance = min(distance, rayBoxDistance(x, y, invDx, invDy, -1, 1, 0, 2))
   end
 
   if dy > 0 and band(mask, 64) ~= 0 then
-    distance = min(distance, rayBoxDistance(ax, ay, invDx, invDy, 0, 1, 1, 2))
+    distance = min(distance, rayBoxDistance(x, y, invDx, invDy, 0, 1, 1, 2))
   end
 
   if dx > 0 and dy > 0 and band(mask, 128) ~= 0 then
-    distance = min(distance, rayBoxDistance(ax, ay, invDx, invDy, 1, 1, 2, 2))
+    distance = min(distance, rayBoxDistance(x, y, invDx, invDy, 1, 1, 2, 2))
   end
 
   return distance
@@ -114,15 +112,17 @@ function love.update(dt)
     local pixelX = globalPixelX % mapSize
     local pixelY = globalPixelY % mapSize
 
-    local ax = (pixelX + 0.5) / mapSize
-    local ay = (pixelY + 0.5) / mapSize
+    local x = (pixelX + 0.5) / mapSize
+    local y = (pixelY + 0.5) / mapSize
 
     local meanLighting = meanLightings[globalPixel] or 0
     local sampleCount = sampleCounts[globalPixel] or 0
 
     for j = 1, 16 do
-      -- local lighting = min(sampleDistance(mask, ax, ay), 1)
-      local lighting = sampleDistance(mask, ax, ay) <= 1 and 0 or 1
+      local dx, dy = cosineSampleHemisphere()
+      local d = distance(mask, x, y, dx, dy)
+      -- local lighting = min(d, 1)
+      local lighting = d <= 1 and 0 or 1
 
       meanLighting = (meanLighting * sampleCount + lighting) / (sampleCount + 1)
       sampleCount = sampleCount + 1
