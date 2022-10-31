@@ -1,4 +1,3 @@
-local abs = assert(math.abs)
 local band = assert(bit.band)
 local cos = assert(math.cos)
 local floor = assert(math.floor)
@@ -6,7 +5,6 @@ local huge = assert(math.huge)
 local max = assert(math.max)
 local min = assert(math.min)
 local pi = assert(math.pi)
-local rshift = assert(bit.rshift)
 local sin = assert(math.sin)
 local sqrt = assert(math.sqrt)
 
@@ -26,7 +24,7 @@ function cosineSampleHemisphere()
 end
 
 -- See: https://tavianator.com/2011/ray_box.html
-function getRayBoxDistance2(x, y, invDx, invDy, minX, minY, maxX, maxY)
+function rayBoxDistance(x, y, invDx, invDy, minX, minY, maxX, maxY)
   local tx1 = (minX - x) * invDx
   local tx2 = (maxX - x) * invDx
 
@@ -45,45 +43,6 @@ function getRayBoxDistance2(x, y, invDx, invDy, minX, minY, maxX, maxY)
   return minT <= maxT and max(0, minT) or huge
 end
 
--- See: https://tavianator.com/2011/ray_box.html
-function getRayBoxDistance3(
-  x,
-  y,
-  z,
-  invDx,
-  invDy,
-  invDz,
-  minX,
-  minY,
-  minZ,
-  maxX,
-  maxY,
-  maxZ
-)
-  local tx1 = (minX - x) * invDx
-  local tx2 = (maxX - x) * invDx
-
-  local minTx = min(tx1, tx2)
-  local maxTx = max(tx1, tx2)
-
-  local ty1 = (minY - y) * invDy
-  local ty2 = (maxY - y) * invDy
-
-  local minTy = min(ty1, ty2)
-  local maxTy = max(ty1, ty2)
-
-  local tz1 = (minZ - z) * invDz
-  local tz2 = (maxZ - z) * invDz
-
-  local minTz = min(tz1, tz2)
-  local maxTz = max(tz1, tz2)
-
-  local minT = max(max(minTx, minTy), minTz)
-  local maxT = min(min(maxTx, maxTy), maxTz)
-
-  return minT <= maxT and max(0, minT) or huge
-end
-
 function sampleDistance(mask, ax, ay)
   local dx, dy = cosineSampleHemisphere()
 
@@ -93,43 +52,35 @@ function sampleDistance(mask, ax, ay)
   local distance = huge
 
   if dx < 0 and dy < 0 and band(mask, 1) ~= 0 then
-    distance =
-      min(distance, getRayBoxDistance2(ax, ay, invDx, invDy, -1, -1, 0, 0))
+    distance = min(distance, rayBoxDistance(ax, ay, invDx, invDy, -1, -1, 0, 0))
   end
 
   if dy < 0 and band(mask, 2) ~= 0 then
-    distance =
-      min(distance, getRayBoxDistance2(ax, ay, invDx, invDy, 0, -1, 1, 0))
+    distance = min(distance, rayBoxDistance(ax, ay, invDx, invDy, 0, -1, 1, 0))
   end
 
   if dx > 0 and dy < 0 and band(mask, 4) ~= 0 then
-    distance =
-      min(distance, getRayBoxDistance2(ax, ay, invDx, invDy, 1, -1, 2, 0))
+    distance = min(distance, rayBoxDistance(ax, ay, invDx, invDy, 1, -1, 2, 0))
   end
 
   if dx < 0 and band(mask, 8) ~= 0 then
-    distance =
-      min(distance, getRayBoxDistance2(ax, ay, invDx, invDy, -1, 0, 0, 1))
+    distance = min(distance, rayBoxDistance(ax, ay, invDx, invDy, -1, 0, 0, 1))
   end
 
   if dx > 0 and band(mask, 16) ~= 0 then
-    distance =
-      min(distance, getRayBoxDistance2(ax, ay, invDx, invDy, 1, 0, 2, 1))
+    distance = min(distance, rayBoxDistance(ax, ay, invDx, invDy, 1, 0, 2, 1))
   end
 
   if dx < 0 and dy > 0 and band(mask, 32) ~= 0 then
-    distance =
-      min(distance, getRayBoxDistance2(ax, ay, invDx, invDy, -1, 1, 0, 2))
+    distance = min(distance, rayBoxDistance(ax, ay, invDx, invDy, -1, 1, 0, 2))
   end
 
   if dy > 0 and band(mask, 64) ~= 0 then
-    distance =
-      min(distance, getRayBoxDistance2(ax, ay, invDx, invDy, 0, 1, 1, 2))
+    distance = min(distance, rayBoxDistance(ax, ay, invDx, invDy, 0, 1, 1, 2))
   end
 
   if dx > 0 and dy > 0 and band(mask, 128) ~= 0 then
-    distance =
-      min(distance, getRayBoxDistance2(ax, ay, invDx, invDy, 1, 1, 2, 2))
+    distance = min(distance, rayBoxDistance(ax, ay, invDx, invDy, 1, 1, 2, 2))
   end
 
   return distance
