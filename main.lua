@@ -26,16 +26,7 @@ function cosineSampleHemisphere()
 end
 
 -- See: https://tavianator.com/2011/ray_box.html
-function getRayBoxDistance2(
-  x,
-  y,
-  invDx,
-  invDy,
-  minX,
-  minY,
-  maxX,
-  maxY
-)
+function getRayBoxDistance2(x, y, invDx, invDy, minX, minY, maxX, maxY)
   local tx1 = (minX - x) * invDx
   local tx2 = (maxX - x) * invDx
 
@@ -102,59 +93,43 @@ function sampleDistance(mask, ax, ay)
   local distance = huge
 
   if dx < 0 and dy < 0 and band(mask, 1) ~= 0 then
-    distance = min(
-      distance,
-      getRayBoxDistance2(ax, ay, invDx, invDy, -1, -1, 0, 0)
-    )
+    distance =
+      min(distance, getRayBoxDistance2(ax, ay, invDx, invDy, -1, -1, 0, 0))
   end
 
   if dy < 0 and band(mask, 2) ~= 0 then
-    distance = min(
-      distance,
-      getRayBoxDistance2(ax, ay, invDx, invDy, 0, -1, 1, 0)
-    )
+    distance =
+      min(distance, getRayBoxDistance2(ax, ay, invDx, invDy, 0, -1, 1, 0))
   end
 
   if dx > 0 and dy < 0 and band(mask, 4) ~= 0 then
-    distance = min(
-      distance,
-      getRayBoxDistance2(ax, ay, invDx, invDy, 1, -1, 2, 0)
-    )
+    distance =
+      min(distance, getRayBoxDistance2(ax, ay, invDx, invDy, 1, -1, 2, 0))
   end
 
   if dx < 0 and band(mask, 8) ~= 0 then
-    distance = min(
-      distance,
-      getRayBoxDistance2(ax, ay, invDx, invDy, -1, 0, 0, 1)
-    )
+    distance =
+      min(distance, getRayBoxDistance2(ax, ay, invDx, invDy, -1, 0, 0, 1))
   end
 
   if dx > 0 and band(mask, 16) ~= 0 then
-    distance = min(
-      distance,
-      getRayBoxDistance2(ax, ay, invDx, invDy, 1, 0, 2, 1)
-    )
+    distance =
+      min(distance, getRayBoxDistance2(ax, ay, invDx, invDy, 1, 0, 2, 1))
   end
 
   if dx < 0 and dy > 0 and band(mask, 32) ~= 0 then
-    distance = min(
-      distance,
-      getRayBoxDistance2(ax, ay, invDx, invDy, -1, 1, 0, 2)
-    )
+    distance =
+      min(distance, getRayBoxDistance2(ax, ay, invDx, invDy, -1, 1, 0, 2))
   end
 
   if dy > 0 and band(mask, 64) ~= 0 then
-    distance = min(
-      distance,
-      getRayBoxDistance2(ax, ay, invDx, invDy, 0, 1, 1, 2)
-    )
+    distance =
+      min(distance, getRayBoxDistance2(ax, ay, invDx, invDy, 0, 1, 1, 2))
   end
 
   if dx > 0 and dy > 0 and band(mask, 128) ~= 0 then
-    distance = min(
-      distance,
-      getRayBoxDistance2(ax, ay, invDx, invDy, 1, 1, 2, 2)
-    )
+    distance =
+      min(distance, getRayBoxDistance2(ax, ay, invDx, invDy, 1, 1, 2, 2))
   end
 
   return distance
