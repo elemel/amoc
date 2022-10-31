@@ -84,6 +84,25 @@ function distance(mask, x, y, dx, dy)
   return distance
 end
 
+function saveScreenshot()
+  local gammaImageData = love.image.newImageData(imageSize, imageSize)
+
+  gammaImageData:mapPixel(function(x, y, r, g, b, a)
+    return love.math.linearToGamma(imageData:getPixel(x, y))
+  end)
+
+  local filename = "screenshot-" .. os.time() .. ".png"
+  gammaImageData:encode("png", filename)
+
+  print(
+    "Saved screenshot: "
+      .. love.filesystem.getSaveDirectory()
+      .. "/"
+      .. filename
+      .. ""
+  )
+end
+
 function love.load()
   mapSize = 32
   imageSize = mapSize * 16
@@ -164,26 +183,13 @@ function love.draw()
 end
 
 function love.keypressed(key, scancode, isrepeat)
-  if key == "escape" or key == "return" then
-    local gammaImageData = love.image.newImageData(imageSize, imageSize)
-
-    gammaImageData:mapPixel(function(x, y, r, g, b, a)
-      return love.math.linearToGamma(imageData:getPixel(x, y))
-    end)
-
-    local filename = "screenshot-" .. os.time() .. ".png"
-    gammaImageData:encode("png", filename)
-
-    print(
-      "Saved screenshot: "
-        .. love.filesystem.getSaveDirectory()
-        .. "/"
-        .. filename
-        .. ""
-    )
-  end
-
   if key == "escape" then
     love.event.quit()
+  elseif key == "return" then
+  	saveScreenshot()
   end
+end
+
+function love.quit()
+	saveScreenshot()
 end
