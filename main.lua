@@ -1,57 +1,163 @@
-function normalize(x, y, z)
-  local length = math.sqrt(x * x + y * y + z * z)
-  return x / length, y / length, z / length, length
-end
-
-function randomPointInSphere(random)
-  while true do
-    local x = love.math.random() * 2 - 1
-    local y = love.math.random() * 2 - 1
-    local z = love.math.random() * 2 - 1
-
-    if x * x + y * y + z * z <= 1 then
-      return x, y, z
-    end
-  end
-end
-
-function randomPointOnSphere()
-  return normalize(randomPointInSphere())
-end
+local abs = assert(math.abs)
+local band = assert(bit.band)
+local cos = assert(math.cos)
+local floor = assert(math.floor)
+local huge = assert(math.huge)
+local max = assert(math.max)
+local min = assert(math.min)
+local pi = assert(math.pi)
+local rshift = assert(bit.rshift)
+local sin = assert(math.sin)
+local sqrt = assert(math.sqrt)
 
 -- See: https://www.rorydriscoll.com/2009/01/07/better-sampling/
 function cosineSampleHemisphere()
   local u1 = love.math.random()
   local u2 = love.math.random()
 
-  local r = math.sqrt(u1)
-  local theta = 2 * math.pi * u2
+  local r = sqrt(u1)
+  local theta = 2 * pi * u2
 
-  local x = r * math.cos(theta)
-  local y = r * math.sin(theta)
-  local z = math.sqrt(math.max(0, 1 - u1))
+  local x = r * cos(theta)
+  local y = r * sin(theta)
+  local z = sqrt(max(0, 1 - u1))
 
   return x, y, z
 end
 
--- See: https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line#Line_defined_by_two_points
-function distanceFromPointToLine(x, y, ax, ay, bx, by)
-  return math.abs((bx - ax) * (ay - y) - (ax - x) * (by - ay))
-    / math.sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay))
+-- See: https://tavianator.com/2011/ray_box.html
+function getRayBoxDistance2(
+  x,
+  y,
+  invDx,
+  invDy,
+  minX,
+  minY,
+  maxX,
+  maxY
+)
+  local tx1 = (minX - x) * invDx
+  local tx2 = (maxX - x) * invDx
+
+  local minTx = min(tx1, tx2)
+  local maxTx = max(tx1, tx2)
+
+  local ty1 = (minY - y) * invDy
+  local ty2 = (maxY - y) * invDy
+
+  local minTy = min(ty1, ty2)
+  local maxTy = max(ty1, ty2)
+
+  local minT = max(minTx, minTy)
+  local maxT = min(maxTx, maxTy)
+
+  return minT <= maxT and max(0, minT) or huge
 end
 
-function isBlock(mask, dx, dy)
-  assert(-1 <= dx and dx <= 1)
-  assert(-1 <= dy and dy <= 1)
-  assert(dx ~= 0 or dy ~= 0)
-  local n = 3 * (dy + 1) + (dx + 1)
+-- See: https://tavianator.com/2011/ray_box.html
+function getRayBoxDistance3(
+  x,
+  y,
+  z,
+  invDx,
+  invDy,
+  invDz,
+  minX,
+  minY,
+  minZ,
+  maxX,
+  maxY,
+  maxZ
+)
+  local tx1 = (minX - x) * invDx
+  local tx2 = (maxX - x) * invDx
 
-  if n >= 5 then
-    n = n - 1
+  local minTx = min(tx1, tx2)
+  local maxTx = max(tx1, tx2)
+
+  local ty1 = (minY - y) * invDy
+  local ty2 = (maxY - y) * invDy
+
+  local minTy = min(ty1, ty2)
+  local maxTy = max(ty1, ty2)
+
+  local tz1 = (minZ - z) * invDz
+  local tz2 = (maxZ - z) * invDz
+
+  local minTz = min(tz1, tz2)
+  local maxTz = max(tz1, tz2)
+
+  local minT = max(max(minTx, minTy), minTz)
+  local maxT = min(min(maxTx, maxTy), maxTz)
+
+  return minT <= maxT and max(0, minT) or huge
+end
+
+function sampleDistance(mask, ax, ay)
+  local dx, dy = cosineSampleHemisphere()
+
+  local invDx = 1 / dx
+  local invDy = 1 / dy
+
+  local distance = huge
+
+  if dx < 0 and dy < 0 and band(mask, 1) ~= 0 then
+    distance = min(
+      distance,
+      getRayBoxDistance2(ax, ay, invDx, invDy, -1, -1, 0, 0)
+    )
   end
 
-  assert(0 <= n and n <= 7)
-  return bit.band(bit.rshift(mask, n), 1) ~= 0
+  if dy < 0 and band(mask, 2) ~= 0 then
+    distance = min(
+      distance,
+      getRayBoxDistance2(ax, ay, invDx, invDy, 0, -1, 1, 0)
+    )
+  end
+
+  if dx > 0 and dy < 0 and band(mask, 4) ~= 0 then
+    distance = min(
+      distance,
+      getRayBoxDistance2(ax, ay, invDx, invDy, 1, -1, 2, 0)
+    )
+  end
+
+  if dx < 0 and band(mask, 8) ~= 0 then
+    distance = min(
+      distance,
+      getRayBoxDistance2(ax, ay, invDx, invDy, -1, 0, 0, 1)
+    )
+  end
+
+  if dx > 0 and band(mask, 16) ~= 0 then
+    distance = min(
+      distance,
+      getRayBoxDistance2(ax, ay, invDx, invDy, 1, 0, 2, 1)
+    )
+  end
+
+  if dx < 0 and dy > 0 and band(mask, 32) ~= 0 then
+    distance = min(
+      distance,
+      getRayBoxDistance2(ax, ay, invDx, invDy, -1, 1, 0, 2)
+    )
+  end
+
+  if dy > 0 and band(mask, 64) ~= 0 then
+    distance = min(
+      distance,
+      getRayBoxDistance2(ax, ay, invDx, invDy, 0, 1, 1, 2)
+    )
+  end
+
+  if dx > 0 and dy > 0 and band(mask, 128) ~= 0 then
+    distance = min(
+      distance,
+      getRayBoxDistance2(ax, ay, invDx, invDy, 1, 1, 2, 2)
+    )
+  end
+
+  return distance
 end
 
 function love.load()
@@ -69,46 +175,13 @@ function love.load()
   mask = 255
 end
 
-function sampleLighting(mask, ax, ay)
-  -- local dx, dy = randomPointOnSphere()
-  local dx, dy = cosineSampleHemisphere()
-  local radius = 1 -- love.math.random()
-
-  local bx = ax + radius * dx
-  local by = ay + radius * dy
-
-  local blockDx = math.floor(bx)
-  local blockDy = math.floor(by)
-
-  local lighting = 1
-
-  if blockDx ~= 0 or blockDy ~= 0 then
-    if isBlock(mask, blockDx, blockDy) then
-      lighting = 0
-    else
-      if blockDx ~= 0 and blockDy ~= 0 then
-        if
-          distanceFromPointToLine(blockDx, 0, ax, ay, bx, by)
-          < distanceFromPointToLine(0, blockDy, ax, ay, bx, by)
-        then
-          lighting = isBlock(mask, blockDx, 0) and 0 or 1
-        else
-          lighting = isBlock(mask, 0, blockDy) and 0 or 1
-        end
-      end
-    end
-  end
-
-  return lighting
-end
-
 function love.update(dt)
-  for i = 1, 8192 do
+  for i = 1, 4096 do
     local globalPixelX = globalPixel % imageSize
-    local globalPixelY = math.floor(globalPixel / imageSize)
+    local globalPixelY = floor(globalPixel / imageSize)
 
-    local mapX = math.floor(globalPixelX / mapSize)
-    local mapY = math.floor(globalPixelY / mapSize)
+    local mapX = floor(globalPixelX / mapSize)
+    local mapY = floor(globalPixelY / mapSize)
 
     local mask = 16 * mapY + mapX
 
@@ -122,7 +195,8 @@ function love.update(dt)
     local sampleCount = sampleCounts[globalPixel] or 0
 
     for j = 1, 16 do
-      local lighting = sampleLighting(mask, ax, ay)
+      -- local lighting = min(sampleDistance(mask, ax, ay), 1)
+      local lighting = sampleDistance(mask, ax, ay) <= 1 and 0 or 1
 
       meanLighting = (meanLighting * sampleCount + lighting) / (sampleCount + 1)
       sampleCount = sampleCount + 1
