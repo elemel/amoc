@@ -186,10 +186,10 @@ function love.keypressed(key, scancode, isrepeat)
   if key == "escape" then
     love.event.quit()
   elseif key == "return" then
-  	saveScreenshot()
+    saveScreenshot()
   end
 end
 
 function love.quit()
-	saveScreenshot()
+  saveScreenshot()
 end
