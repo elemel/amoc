@@ -1,5 +1,5 @@
 # Mayo
 
-Mayo bakes ambient occlusion for voxels.
+Mayo bakes a palette (atlas) of ambient-occlusion maps for voxel geometry.
 
 ![Screenshot](screenshot.png)

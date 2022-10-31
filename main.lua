@@ -9,22 +9,19 @@ local sin = assert(math.sin)
 local sqrt = assert(math.sqrt)
 
 -- See: https://www.rorydriscoll.com/2009/01/07/better-sampling/
-function cosineSampleHemisphere()
-  local u1 = love.math.random()
-  local u2 = love.math.random()
-
+function cosineSampleHemisphere(u1, u2)
   local r = sqrt(u1)
   local theta = 2 * pi * u2
 
   local x = r * cos(theta)
   local y = r * sin(theta)
-  local z = sqrt(max(0, 1 - u1))
+  -- local z = sqrt(max(0, 1 - u1))
 
-  return x, y, z
+  return x, y
 end
 
 -- See: https://tavianator.com/2011/ray_box.html
-function rayBoxDistance(x, y, invDx, invDy, minX, minY, maxX, maxY)
+function rayCastBox(x, y, invDx, invDy, minX, minY, maxX, maxY)
   local tx1 = (minX - x) * invDx
   local tx2 = (maxX - x) * invDx
 
@@ -43,42 +40,42 @@ function rayBoxDistance(x, y, invDx, invDy, minX, minY, maxX, maxY)
   return minT <= maxT and max(0, minT) or huge
 end
 
-function distance(mask, x, y, dx, dy)
+function rayCast(x, y, dx, dy, neighborMask)
   local invDx = 1 / dx
   local invDy = 1 / dy
 
   local distance = huge
 
-  if dx < 0 and dy < 0 and band(mask, 1) ~= 0 then
-    distance = min(distance, rayBoxDistance(x, y, invDx, invDy, -1, -1, 0, 0))
+  if dx < 0 and dy < 0 and band(neighborMask, 1) ~= 0 then
+    distance = min(distance, rayCastBox(x, y, invDx, invDy, -1, -1, 0, 0))
   end
 
-  if dy < 0 and band(mask, 2) ~= 0 then
-    distance = min(distance, rayBoxDistance(x, y, invDx, invDy, 0, -1, 1, 0))
+  if dy < 0 and band(neighborMask, 2) ~= 0 then
+    distance = min(distance, rayCastBox(x, y, invDx, invDy, 0, -1, 1, 0))
   end
 
-  if dx > 0 and dy < 0 and band(mask, 4) ~= 0 then
-    distance = min(distance, rayBoxDistance(x, y, invDx, invDy, 1, -1, 2, 0))
+  if dx > 0 and dy < 0 and band(neighborMask, 4) ~= 0 then
+    distance = min(distance, rayCastBox(x, y, invDx, invDy, 1, -1, 2, 0))
   end
 
-  if dx < 0 and band(mask, 8) ~= 0 then
-    distance = min(distance, rayBoxDistance(x, y, invDx, invDy, -1, 0, 0, 1))
+  if dx < 0 and band(neighborMask, 8) ~= 0 then
+    distance = min(distance, rayCastBox(x, y, invDx, invDy, -1, 0, 0, 1))
   end
 
-  if dx > 0 and band(mask, 16) ~= 0 then
-    distance = min(distance, rayBoxDistance(x, y, invDx, invDy, 1, 0, 2, 1))
+  if dx > 0 and band(neighborMask, 16) ~= 0 then
+    distance = min(distance, rayCastBox(x, y, invDx, invDy, 1, 0, 2, 1))
   end
 
-  if dx < 0 and dy > 0 and band(mask, 32) ~= 0 then
-    distance = min(distance, rayBoxDistance(x, y, invDx, invDy, -1, 1, 0, 2))
+  if dx < 0 and dy > 0 and band(neighborMask, 32) ~= 0 then
+    distance = min(distance, rayCastBox(x, y, invDx, invDy, -1, 1, 0, 2))
   end
 
-  if dy > 0 and band(mask, 64) ~= 0 then
-    distance = min(distance, rayBoxDistance(x, y, invDx, invDy, 0, 1, 1, 2))
+  if dy > 0 and band(neighborMask, 64) ~= 0 then
+    distance = min(distance, rayCastBox(x, y, invDx, invDy, 0, 1, 1, 2))
   end
 
-  if dx > 0 and dy > 0 and band(mask, 128) ~= 0 then
-    distance = min(distance, rayBoxDistance(x, y, invDx, invDy, 1, 1, 2, 2))
+  if dx > 0 and dy > 0 and band(neighborMask, 128) ~= 0 then
+    distance = min(distance, rayCastBox(x, y, invDx, invDy, 1, 1, 2, 2))
   end
 
   return distance
@@ -115,7 +112,7 @@ function love.load()
   image = love.graphics.newImage(imageData)
   image:setFilter("linear", "nearest")
 
-  mask = 255
+  neighborMask = 255
 end
 
 function love.update(dt)
@@ -126,7 +123,7 @@ function love.update(dt)
     local mapX = floor(globalPixelX / mapSize)
     local mapY = floor(globalPixelY / mapSize)
 
-    local mask = 16 * mapY + mapX
+    local neighborMask = 16 * mapY + mapX
 
     local pixelX = globalPixelX % mapSize
     local pixelY = globalPixelY % mapSize
@@ -138,10 +135,14 @@ function love.update(dt)
     local sampleCount = sampleCounts[globalPixel] or 0
 
     for j = 1, 16 do
-      local dx, dy = cosineSampleHemisphere()
-      local d = distance(mask, x, y, dx, dy)
-      -- local lighting = min(d, 1)
-      local lighting = d <= 1 and 0 or 1
+      local u1 = love.math.random()
+      local u2 = love.math.random()
+
+      local dx, dy = cosineSampleHemisphere(u1, u2)
+      local distance = rayCast(x, y, dx, dy, neighborMask)
+
+      -- local lighting = min(distance, 1)
+      local lighting = distance <= 1 and 0 or 1
 
       meanLighting = (meanLighting * sampleCount + lighting) / (sampleCount + 1)
       sampleCount = sampleCount + 1
