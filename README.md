@@ -1,5 +1,5 @@
-# Amoc
+# Occam
 
-Amoc bakes ambient-occlusion maps for voxel geometry.
+Occam bakes ambient-occlusion maps for voxel geometry.
 
 ![Screenshot](screenshot.png)

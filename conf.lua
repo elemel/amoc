@@ -4,5 +4,5 @@ function love.conf(t)
   -- t.window.fullscreen = true
   -- t.window.highdpi = true
   t.window.resizable = true
-  t.window.title = "Amoc"
+  t.window.title = "Occam"
 end
