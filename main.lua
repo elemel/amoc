@@ -101,7 +101,7 @@ function saveScreenshot()
 end
 
 function love.load()
-  mapSize = 32
+  mapSize = 16
   imageSize = mapSize * 16
   globalPixel = 0
 
