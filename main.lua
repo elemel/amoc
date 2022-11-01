@@ -37,7 +37,7 @@ function rayCastBox(x, y, invDx, invDy, minX, minY, maxX, maxY)
   local minT = max(minTx, minTy)
   local maxT = min(maxTx, maxTy)
 
-  return minT <= maxT and max(0, minT) or huge
+  return maxT >= 0 and minT <= maxT and max(0, minT) or huge
 end
 
 function rayCast(x, y, dx, dy, neighborMask)
